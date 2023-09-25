@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -9,7 +8,6 @@ import (
 
 	"github.com/TechBowl-japan/go-stations/db"
 	"github.com/TechBowl-japan/go-stations/handler/router"
-	"github.com/TechBowl-japan/go-stations/model"
 )
 
 func main() {
@@ -53,8 +51,6 @@ func realMain() error {
 	// NOTE: 新しいエンドポイントの登録はrouter.NewRouterの内部で行うようにする
 	mux := router.NewRouter(todoDB)
 
-	http.HandleFunc("/healthz", healthzHandler)
-
 	// Start the server and handle potential errors
 	log.Println("Server started on port", port)
 	err = http.ListenAndServe(port, mux)
@@ -63,14 +59,4 @@ func realMain() error {
 	}
 
 	return nil
-}
-
-func healthzHandler(w http.ResponseWriter, _ *http.Request) {
-	res := model.HealthzResponse{
-		Message: "Hello World!!",
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(res)
 }

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/TechBowl-japan/go-stations/model"
+	"github.com/mattn/go-sqlite3"
 )
 
 // A TODOService implements CRUD of TODO entities.
@@ -21,12 +22,33 @@ func NewTODOService(db *sql.DB) *TODOService {
 
 // CreateTODO creates a TODO on DB.
 func (s *TODOService) CreateTODO(ctx context.Context, subject, description string) (*model.TODO, error) {
+	if subject == "" {
+		return nil, sqlite3.Error{Code: sqlite3.ErrConstraint}
+	}
+
 	const (
-		insert  = `INSERT INTO todos(subject, description) VALUES(?, ?)`
-		confirm = `SELECT subject, description, created_at, updated_at FROM todos WHERE id = ?`
+			insert  = `INSERT INTO todos(subject, description) VALUES(?, ?)`
+			confirm = `SELECT id, subject, description, created_at, updated_at FROM todos WHERE id = ?`
 	)
 
-	return nil, nil
+	result, err := s.db.ExecContext(ctx, insert, subject, description)
+	if err != nil {
+			return nil, err
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+			return nil, err
+	}
+
+	row := s.db.QueryRowContext(ctx, confirm, id)
+	todo := &model.TODO{}
+	err = row.Scan(&todo.ID, &todo.Subject, &todo.Description, &todo.CreatedAt, &todo.UpdatedAt)
+	if err != nil {
+			return nil, err
+	}
+
+	return todo, nil
 }
 
 // ReadTODO reads TODOs on DB.
